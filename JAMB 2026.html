@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LEEMA WEB SOLUTIONS | Unified JAMB CBT Portal 2026</title>
+    <style>
+        :root { --primary: #003366; --secondary: #2d6a4f; --accent: #b8860b; --bg: #f0f2f5; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        #app-container { background: white; width: 95%; max-width: 900px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); overflow: hidden; }
+        .header { background: var(--primary); color: white; padding: 30px; text-align: center; }
+        .screen { padding: 40px; display: none; }
+        .active { display: block; }
+        
+        /* Selection Styles */
+        .subject-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; text-align: left; }
+        .subject-item { padding: 15px; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; display: flex; align-items: center; }
+        .subject-item input { margin-right: 15px; transform: scale(1.5); }
+        .subject-item.selected { border-color: var(--secondary); background: #e8f5e9; }
+
+        /* Exam UI */
+        .exam-stats { display: flex; justify-content: space-between; font-weight: bold; padding-bottom: 15px; border-bottom: 2px solid #eee; margin-bottom: 20px; }
+        .q-text { font-size: 1.3rem; margin-bottom: 25px; min-height: 80px; }
+        .options { display: grid; gap: 12px; }
+        .opt { padding: 15px; border: 1px solid #ccc; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+        .opt:hover { background: #f9f9f9; }
+        .opt.picked { background: var(--primary); color: white; border-color: var(--primary); }
+
+        .btn { padding: 12px 30px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 1rem; }
+        .btn-start { background: var(--secondary); color: white; width: 100%; margin-top: 20px; }
+        .nav-btns { display: flex; justify-content: space-between; margin-top: 30px; }
+        
+        input[type="text"] { width: 100%; padding: 15px; box-sizing: border-box; border: 2px solid #ddd; border-radius: 6px; font-size: 1.1rem; margin-bottom: 20px; }
+        
+        /* Result */
+        .score-circle { width: 150px; height: 150px; border-radius: 50%; border: 10px solid var(--secondary); display: flex; flex-direction: column; justify-content: center; align-items: center; margin: 20px auto; font-size: 2rem; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div id="app-container">
+    <div class="header">
+        <h1>LEEMA WEB SOLUTIONS</h1>
+        <p>Unified JAMB Simulation Portal 2026</p>
+    </div>
+
+    <div id="start-screen" class="screen active">
+        <h2>Candidate Registration</h2>
+        <input type="text" id="reg-no" placeholder="Enter JAMB Registration Number">
+        
+        <h3>Select your 4 Subject Combinations:</h3>
+        <div class="subject-grid" id="subject-selector">
+            <label class="subject-item"><input type="checkbox" value="English" checked disabled> Use of English (Compulsory)</label>
+            <label class="subject-item"><input type="checkbox" value="Physics"> Physics</label>
+            <label class="subject-item"><input type="checkbox" value="Chemistry"> Chemistry</label>
+            <label class="subject-item"><input type="checkbox" value="Biology"> Biology</label>
+            <label class="subject-item"><input type="checkbox" value="CRK"> CRK</label>
+            <label class="subject-item"><input type="checkbox" value="Government"> Government</label>
+            <label class="subject-item"><input type="checkbox" value="Literature"> Literature in English</label>
+        </div>
+        <button class="btn btn-start" onclick="initExam()">START EXAMINATION</button>
+    </div>
+
+    <div id="exam-screen" class="screen">
+        <div class="exam-stats">
+            <span id="current-subject-name" style="color:var(--accent)">SUBJECT</span>
+            <span id="timer">Reg: <span id="disp-reg"></span></span>
+            <span id="q-progress">Q 1/40</span>
+        </div>
+        <div class="q-text" id="q-body">Loading question...</div>
+        <div class="options" id="opt-container"></div>
+        <div class="nav-btns">
+            <button class="btn" onclick="prevQ()" style="background:#666; color:white;">PREVIOUS</button>
+            <button class="btn" id="next-btn" onclick="nextQ()" style="background:var(--primary); color:white;">NEXT</button>
+        </div>
+    </div>
+
+    <div id="result-screen" class="screen" style="text-align: center;">
+        <h2>EXAMINATION COMPLETED</h2>
+        <p>Candidate: <strong id="res-reg"></strong></p>
+        <div id="individual-scores" style="text-align: left; max-width: 300px; margin: 20px auto;"></div>
+        <div class="score-circle">
+            <span id="total-agg">0</span>
+            <small style="font-size: 0.8rem;">TOTAL / 400</small>
+        </div>
+        <button class="btn btn-start" onclick="location.reload()">CLOSE PORTAL</button>
+    </div>
+</div>
+
+<script>
+// DATABASE MAPPING (Simplified references to the data you provided)
+const masterBank = {
+    "English": { 
+        marks: 1.666, 
+        questions: [
+            {q: "Choose the option nearest in meaning: The man was VENTURESOME.", a: "Lazy", b: "Daring", c: "Careful", d: "Quiet", ans: "b"},
+            { q: "What is the name of the school where Bepo serves as Principal?", a: "Lekki International", b: "Stardom Schools", c: "Gusau Academy", d: "Beesway Schools", ans: "b" },
+            { q: "Why was Bepo nicknamed 'The Lekki Headmaster'?", a: "Because he lived in Lekki", b: "For imitating characters from the 'Village Headmaster' TV series", c: "Because he was the richest teacher", d: "He was appointed by the Local Government", ans: "b" },
+    	    { q: "What central conflict does Bepo face in the novel?", a: "A lawsuit from a parent", b: "The 'Japa' syndrome vs. Patriotism", c: "A health crisis at school", d: "Financial bankruptcy", ans: "b" },
+   	   { q: "Who is the Managing Director (MD) of Stardom Schools?", a: "Mrs. Grace Apeh", b: "Mrs. Ibidun Gloss", c: "Mrs. Titi", d: "Mrs. Beke Egbin", ans: "b" },
+{ q: "What was the unusual scene at the morning assembly in Chapter 1?", a: "A fire outbreak", b: "The Principal burst into tears on the podium", c: "A student protest", d: "A visit from the Minister", ans: "b" },
+    { q: "Which teacher is also a pastor and tries to counsel Bepo?", a: "Mr. Audu", b: "Mr. Ope Wande", c: "Mr. Amos", d: "Mr. Justus Anabel", ans: "b" },
+    { q: "Where did Bepo's wife, Seri, relocate to?", a: "United States", b: "United Kingdom", c: "Canada", d: "Germany", ans: "b" },
+    { q: "What are the names of Bepo's children?", a: "Tunde and Lola", b: "Nike and Kike", c: "Emeka and Chioma", d: "Banky and Tosh", ans: "b" },
+    { q: "In the novel, what does the 'Point of No Return' in Badagry symbolize?", a: "A tourist attraction", b: "Historical slavery and emotional trauma", c: "The end of the school year", d: "Bepo's retirement", ans: "b" },
+    { q: "Which character is known as a 'clownish' Fine Art teacher?", a: "Mr. Amos", b: "Mr. Audu", c: "Mr. Obong", d: "Mr. Wande", ans: "b" },
+    { q: "How many years has Mr. Bepo served at Stardom Schools?", a: "10 years", b: "24 years", c: "15 years", d: "30 years", ans: "b" },
+    { q: "Why were Mr. Obong and Miss Taye reprimanded by the MD?", a: "For coming late", b: "Because two of their students scored Ds", c: "For inciting students", d: "For lost equipment", ans: "b" },
+    { q: "What was the previous boarding fee before it was reduced to ₦165,000?", a: "₦200,000", b: "₦250,000", c: "₦180,000", d: "₦300,000", ans: "b" },
+    { q: "Who delivers a captivating speech about an excursion to Jos?", a: "Banky", b: "Ikenna Egbu", c: "Tosh", d: "Jide", ans: "b" },
+    { q: "The term 'Japa' in the novel refers to:", a: "Traditional dance", b: "Brain drain/Migration abroad", c: "Exam malpractice", d: "School sports", ans: "b" },
+    { q: "Who is the Vice Principal of the school?", a: "Mrs. Titi", b: "Mrs. Grace Apeh", c: "Mrs. Ladele", d: "Mrs. Bayo", ans: "b" },
+    { q: "Bepo's internal dilemma shows he values:", a: "Money above all", b: "Integrity and educational mission", c: "Politics", d: "Fame", ans: "b" },
+    { q: "The 'Canoe Dance' performed during the farewell symbolizes:", a: "Warfare", b: "Migration and survival", c: "Wealth", d: "Marriage", ans: "b" },
+    { q: "Who is the student involved in a rivalry with Tosh?", a: "Ikenna", b: "Banky", c: "Jide", d: "Sola", ans: "b" },
+    { q: "Why did Bepo leave Beesway Group of Schools earlier?", a: "He was sacked", b: "A disagreement over the school's name/grammar", c: "Lower salary", d: "He wanted to travel", ans: "b" },
+    { q: "What does the MD discover about the Stardom Cooperative Society?", a: "It was bankrupt", b: "There were financial irregularities/loans", c: "It was thriving beyond measure", d: "It was illegal", ans: "b" },
+    { q: "Who accompanied Bepo home after his breakdown on the podium?", a: "Mrs. Gloss", b: "Mrs. Beke Egbin (Counselor)", c: "Mr. Amos", d: "Nurse Titi", ans: "b" },
+    { q: "What is Bepo’s reaction to pressure from his wife to leave Nigeria?", a: "He agrees immediately", b: "He feels deep emotional distress and resistance", c: "He files for divorce", d: "He quits teaching", ans: "b" },
+    { q: "The major theme of 'The Lekki Headmaster' is:", a: "Modern Agriculture", b: "Leadership and the challenges of the Nigerian education system", c: "Religious conflicts", d: "International trade", ans: "b" },
+
+    // SECTION B: LEXIS & STRUCTURE (26-50)
+    { q: "Choose the word OPPOSITE in meaning: The judge was IMPARTIAL in his ruling.", a: "Fair", b: "Biased", c: "Objective", d: "Strict", ans: "b" },
+    { q: "Choose the word NEAREST in meaning: The boy was ADROIT in fixing the computer.", a: "Slow", b: "Skillful", c: "Clumsy", d: "Lazy", ans: "b" },
+    { q: "Identify the correct spelling:", a: "Maintenance", b: "Maintanance", c: "Maintenence", d: "Maintainance", ans: "a" },
+    { q: "You haven't finished the assignment, ______?", a: "don't you", b: "have you", c: "haven't you", d: "did you", ans: "b" },
+    { q: "Meaning of the idiom: 'To wash one's hands of' something.", a: "To clean up", b: "To refuse responsibility", c: "To start a project", d: "To be happy", ans: "b" },
+    { q: "The man ____ car was stolen reported to the police.", a: "who", b: "whose", c: "whom", d: "which", ans: "b" },
+    { q: "Choose the antonym of GLOOMY:", a: "Sad", b: "Cheerful", c: "Dark", d: "Heavy", ans: "b" },
+    { q: "A person who is LACONIC is:", a: "Talkative", b: "Brief in speech", c: "Very tall", d: "Always late", ans: "b" },
+    { q: "Identify the clause: 'When the bell rang', the students ran out.", a: "Noun clause", b: "Adverbial clause", c: "Adjectival clause", d: "Relative clause", ans: "b" },
+    { q: "Choose the correct spelling:", a: "Occurrence", b: "Occurence", c: "Ocurence", d: "Occureance", ans: "a" },
+    { q: "Choose the synonym of METICULOUS:", a: "Careless", b: "Thorough", c: "Lazy", d: "Fast", ans: "b" },
+    { q: "I would have gone if I ____ the time.", a: "have", b: "had had", c: "had", d: "have had", ans: "b" },
+    { q: "Homonyms: Choose the correct word: 'The _____ of the school is a disciplinarian.'", a: "Principle", b: "Principal", c: "Prinsipal", d: "Principale", ans: "b" },
+    { q: "Meaning of 'A white elephant project':", a: "A successful project", b: "A useless/costly project", c: "A wildlife project", d: "A new project", ans: "b" },
+    { q: "The plural of 'Alumnus' is:", a: "Alumnuses", b: "Alumni", c: "Alumnas", d: "Alumnis", ans: "b" },
+    { q: "Choose the synonym of CANDID:", a: "Secretive", b: "Frank", c: "Dishonest", d: "Quiet", ans: "b" },
+    { q: "Punctuation: Which is correct?", a: "The boys' bags are here.", b: "The boy's bags are here.", c: "The boys bags' are here.", d: "The boys bags are here.", ans: "a" },
+    { q: "Choose the antonym of DORMANT:", a: "Sleeping", b: "Active", c: "Quiet", d: "Hidden", ans: "b" },
+    { q: "Tag Question: 'She rarely comes late, ____?'", a: "doesn't she", b: "does she", c: "isn't it", d: "don't she", ans: "b" },
+    { q: "Neither the teacher nor the students ____ present.", a: "is", b: "are", c: "was", d: "been", ans: "b" },
+    { q: "Choose the synonym of BENEVOLENT:", a: "Cruel", b: "Kind", c: "Selfish", d: "Greedy", ans: "b" },
+    { q: "Identify the sentence pattern: 'I gave her a book.'", a: "S-V-O", b: "S-V-IO-DO", c: "S-V-C", d: "S-V", ans: "b" },
+    { q: "The mechanic ____ repaired the car is gone.", a: "whom", b: "who", c: "which", d: "whose", ans: "b" },
+    { q: "Antonym of VAGUE:", a: "Unclear", b: "Clear", c: "Hazy", d: "Blurry", ans: "b" },
+    { q: "Choose the correct spelling:", a: "Privilege", b: "Priviledge", c: "Prevelege", d: "Privilidge", ans: "a" },
+
+    // SECTION C: ORAL FORMS (51-60)
+    { q: "Which word has the same vowel sound as 'POLICE'?", a: "Bit", b: "Key", c: "Bed", d: "Sit", ans: "b" },
+    { q: "Identify the word with a DIPHTHONG sound:", a: "Cat", b: "Boy", c: "Pet", d: "Sun", ans: "b" },
+    { q: "Which word rhymes with 'HEIGHT'?", a: "Weight", b: "Light", c: "Paid", d: "Eight", ans: "b" },
+    { q: "Choose the word with a different consonant sound:", a: "Think", b: "This", c: "Thin", d: "Thought", ans: "b" },
+    { q: "Select the word with the correct stress: 'EDUCATION'", a: "E-du-ca-tion", b: "e-du-CA-tion", c: "E-du-ca-tion", d: "e-du-ca-TION", ans: "b" },
+    { q: "Which word has the same consonant sound as 'CHURCH'?", a: "School", b: "Watch", c: "Character", d: "Chord", ans: "b" },
+    { q: "Identify the word with the same vowel sound as 'BIRD':", a: "Bad", b: "Learn", c: "Bead", d: "Board", ans: "b" },
+    { q: "Which word rhymes with 'CLAY'?", a: "Day", b: "Claw", c: "Key", d: "Plait", ans: "a" },
+    { q: "Word Stress: Identify the stressed syllable in 'PHOTOGRAPHY':", a: "PHO-to-graphy", b: "pho-TOG-ra-phy", c: "pho-to-GRAPH-y", d: "pho-to-graphy-Y", ans: "b" },
+    { q: "Intonation: A 'falling tune' is usually used for:", a: "Questions", b: "Statements", c: "Requests", d: "Doubts", ans: "b" }
+       
+ ]
+    },
+    "Physics": { 
+        marks: 2.5,  
+        questions: [
+            {q: "The unit of Power is?", a: "Joule", b: "Watt", c: "Newton", d: "Volt", ans: "b"},
+            { q: "The dimension of Power is represented by:", a: "ML²T⁻²", b: "ML²T⁻³", c: "MLT⁻²", d: "ML⁻¹T⁻²", ans: "b" },
+    
+    // 2. Scalars and Vectors
+    { q: "Which of the following is a vector quantity?", a: "Distance", b: "Magnetic flux density", c: "Mass", d: "Work", ans: "b" },
+    
+    // 3. Motion
+    { q: "A car starts from rest and accelerates uniformly at 2m/s² for 10 seconds. What is the distance covered?", a: "20m", b: "100m", c: "200m", d: "50m", ans: "b" },
+    { q: "The area under a velocity-time graph represents:", a: "Acceleration", b: "Displacement", c: "Speed", d: "Impulse", ans: "b" },
+    { q: "A ball is thrown horizontally from a height. The time of flight depends on:", a: "Initial velocity", b: "The height of release", c: "The mass of the ball", d: "The horizontal distance", ans: "b" },
+
+    // 4. Force and Equilibrium
+    { q: "A 50kg mass is acted upon by a force of 100N. What is the acceleration produced?", a: "0.5 m/s²", b: "2.0 m/s²", c: "5.0 m/s²", d: "5000 m/s²", ans: "b" },
+    { q: "Lami's Theorem is applied to:", a: "Parallel forces", b: "Three concurrent forces in equilibrium", c: "Collinear forces", d: "Frictional forces", ans: "b" },
+
+    // 5. Work, Energy and Power
+    { q: "An object of mass 2kg is at a height of 10m. Its potential energy is: (g = 10m/s²)", a: "20 J", b: "200 J", c: "100 J", d: "400 J", ans: "b" },
+    
+    // 6. Friction and Simple Machines
+    { q: "The efficiency of a machine with a velocity ratio of 5 and mechanical advantage of 4 is:", a: "125%", b: "80%", c: "20%", d: "90%", ans: "b" },
+    { q: "Viscosity is the internal friction between layers of a fluid. It decreases in liquids when:", a: "Pressure increases", b: "Temperature increases", c: "Density increases", d: "Velocity increases", ans: "b" },
+
+    // 7. Elasticity and Pressure
+    { q: "Hooke's Law states that force is directly proportional to extension, provided that the ____ is not exceeded.", a: "Breaking point", b: "Elastic limit", c: "Yield point", d: "Plastic limit", ans: "b" },
+    { q: "The pressure in a liquid at a certain depth depends on:", a: "The shape of the container", b: "The density of the liquid", c: "The surface area of the liquid", d: "The volume of the liquid", ans: "b" },
+
+    // 8. Liquids at Rest and Archimedes
+    { q: "The upthrust on a body fully immersed in a liquid is equal to the weight of the liquid displaced. This is:", a: "Pascal's Law", b: "Archimedes' Principle", c: "Newton's Law", d: "Boyle's Law", ans: "b" },
+
+    // 9. Thermal Physics
+    { q: "The temperature at which the volume of an ideal gas becomes zero is:", a: "0°C", b: "-273 K", c: "0 K", d: "100°C", ans: "c" },
+    { q: "The quantity of heat required to raise the temperature of a unit mass of a substance by 1K is:", a: "Heat capacity", b: "Specific heat capacity", c: "Latent heat", d: "Molar heat", ans: "b" },
+    { q: "Anomalous expansion of water occurs between:", a: "0°C and 100°C", b: "0°C and 4°C", c: "4°C and 10°C", d: "-4°C and 0°C", ans: "b" },
+
+    // 10. Waves and Sound
+    { q: "Which of the following is a longitudinal wave?", a: "Light wave", b: "Sound wave", c: "Radio wave", d: "Water wave", ans: "b" },
+    { q: "The pitch of a sound note depends on its:", a: "Amplitude", b: "Frequency", c: "Wavelength", d: "Velocity", ans: "b" },
+    { q: "The phenomenon where a wave changes direction as it passes from one medium to another is:", a: "Reflection", b: "Refraction", c: "Diffraction", d: "Interference", ans: "b" },
+
+    // 11. Light and Optics
+    { q: "A convex mirror always produces an image that is:", a: "Real and inverted", b: "Virtual and diminished", c: "Virtual and magnified", d: "Real and magnified", ans: "b" },
+    { q: "The power of a lens with a focal length of 20cm is:", a: "5.0 D", b: "0.05 D", c: "2.0 D", d: "20.0 D", ans: "a" },
+    { q: "Total internal reflection occurs when light travels from a ____ to a ____ medium.", a: "Less dense, More dense", b: "Denser, Less dense", c: "Air, Glass", d: "Vacuum, Water", ans: "b" },
+
+    // 12. Electrostatics and Capacitors
+    { q: "The energy stored in a capacitor of 10μF charged to 100V is:", a: "0.1 J", b: "0.05 J", c: "1.0 J", d: "1000 J", ans: "b" },
+    { q: "The force between two charges is inversely proportional to the square of their distance. This is:", a: "Ohm's Law", b: "Coulomb's Law", c: "Faraday's Law", d: "Lenz's Law", ans: "b" },
+
+    // 13. Current Electricity
+    { q: "The resistance of a wire is 10Ω. If its length is doubled and its area is halved, the new resistance is:", a: "10Ω", b: "40Ω", c: "20Ω", d: "5Ω", ans: "b" },
+    { q: "Which instrument is used to measure potential difference?", a: "Ammeter", b: "Voltmeter", c: "Galvanometer", d: "Rheostat", ans: "b" },
+    { q: "In a series circuit, which of the following remains the same through all resistors?", a: "Voltage", b: "Current", c: "Resistance", d: "Power", ans: "b" },
+
+    // 14. Magnetism and Induction
+    { q: "A material that is easily magnetized and easily demagnetized is:", a: "Steel", b: "Soft iron", c: "Copper", d: "Aluminum", ans: "b" },
+    { q: "The direction of an induced current is such as to oppose the change causing it. This is:", a: "Faraday's Law", b: "Lenz's Law", c: "Ohm's Law", d: "Ampere's Law", ans: "b" },
+    { q: "A step-up transformer increases:", a: "Current", b: "Voltage", c: "Power", d: "Frequency", ans: "b" },
+
+    // 15. Modern Physics
+    { q: "The emission of electrons from a metal surface when light shines on it is:", a: "Thermionic emission", b: "Photoelectric effect", c: "Field emission", d: "Secondary emission", ans: "b" },
+    { q: "The half-life of a radioactive element is 10 days. After 30 days, what fraction remains?", a: "1/4", b: "1/8", c: "1/2", d: "1/16", ans: "b" },
+    { q: "Cathode rays are streams of:", a: "Protons", b: "Electrons", c: "Neutrons", d: "Photons", ans: "b" },
+    { q: "Which of the following has the highest penetrating power?", a: "Alpha particles", b: "Gamma rays", c: "Beta particles", d: "X-rays", ans: "b" },
+
+    // General Topics
+    { q: "The SI unit of magnetic flux is:", a: "Tesla", b: "Weber", c: "Henry", d: "Farad", ans: "b" },
+    { q: "The change of state from solid directly to gas is:", a: "Evaporation", b: "Sublimation", c: "Fusion", d: "Condensation", ans: "b" },
+    { q: "A simple pendulum has a period of 2.0s. If the length is quadrupled, the new period is:", a: "2.0s", b: "4.0s", c: "1.0s", d: "8.0s", ans: "b" },
+    { q: "The velocity of light in a vacuum is approximately:", a: "3 x 10⁶ m/s", b: "3 x 10⁸ m/s", c: "3 x 10¹⁰ m/s", d: "1.5 x 10⁸ m/s", ans: "b" },
+    { q: "Nuclear fusion occurs when:", a: "A heavy nucleus splits", b: "Light nuclei combine", c: "Electrons are shared", d: "Neutrons are emitted", ans: "b" }
+        ]
+    },
+    "Chemistry": { 
+        marks: 2.5, 
+        questions: [
+            {q: "The simplest atom is?", a: "Oxygen", b: "Hydrogen", c: "Carbon", d: "Helium", ans: "b"},
+{ q: "A liquid that boils at a fixed temperature is said to be:", a: "Volatile", b: "Pure", c: "Impure", d: "Miscible", ans: "b" },
+    
+    // 2. Chemical Combination & Stoichiometry
+    { q: "How many moles are present in 10g of Calcium Carbonate (CaCO3)? [Ca=40, C=12, O=16]", a: "0.1 mol", b: "0.5 mol", c: "1.0 mol", d: "2.0 mol", ans: "a" },
+    { q: "The law which states that 'at constant temperature and pressure, gases combine in volumes which bear a simple ratio to one another' is:", a: "Boyle's Law", b: "Gay-Lussac's Law", c: "Charles's Law", d: "Avogadro's Law", ans: "b" },
+
+    // 3. Kinetic Theory & Gas Laws
+    { q: "At what temperature does a gas occupy zero volume according to Charles's Law?", a: "0°C", b: "-273°C", c: "100°C", d: "273°C", ans: "b" },
+    { q: "The rate of diffusion of a gas is inversely proportional to the square root of its density. This is:", a: "Dalton's Law", b: "Graham's Law", c: "Boyle's Law", d: "Ideal Gas Law", ans: "b" },
+
+    // 4. Atomic Structure & Bonding
+    { q: "The shape of a water molecule (H2O) is:", a: "Linear", b: "Non-linear (V-shaped)", c: "Tetrahedral", d: "Pyramidal", ans: "b" },
+    { q: "Atoms of the same element with the same atomic number but different mass numbers are called:", a: "Isomers", b: "Isotopes", c: "Allotropes", d: "Isobars", ans: "b" },
+
+    // 5. Air & Water
+    { q: "Permanent hardness of water is caused by the presence of:", a: "Calcium hydrogen carbonate", b: "Calcium tetraoxosulphate (VI)", c: "Sodium carbonate", d: "Potassium chloride", ans: "b" },
+    { q: "Which of the following gases is the most abundant in air?", a: "Oxygen", b: "Nitrogen", c: "Carbon dioxide", d: "Argon", ans: "b" },
+
+    // 6. Solubility
+    { q: "A solution that contains as much solute as it can dissolve at a given temperature is:", a: "Unsaturated", b: "Saturated", c: "Supersaturated", d: "Concentrated", ans: "b" },
+
+    // 7. Acids, Bases & Salts
+    { q: "Which of the following is an example of an acid salt?", a: "NaCl", b: "NaHSO4", c: "Na2SO4", d: "CH3COONa", ans: "b" },
+    { q: "The pH of a neutral solution at 25°C is:", a: "0", b: "7", c: "14", d: "1", ans: "b" },
+
+    // 8. Redox & Electrolysis
+    { q: "The oxidation number of Manganese in KMnO4 is:", a: "+2", b: "+7", c: "+5", d: "+4", ans: "b" },
+    { q: "During the electrolysis of brine, the products at the electrodes are:", a: "Sodium and Oxygen", b: "Chlorine and Hydrogen", c: "Sodium and Chlorine", d: "Oxygen and Hydrogen", ans: "b" },
+
+    // 9. Thermochemistry & Kinetics
+    { q: "A reaction in which heat is absorbed from the surroundings is called:", a: "Exothermic", b: "Endothermic", c: "Spontaneous", d: "Reversible", ans: "b" },
+    { q: "Which of the following increases the rate of a chemical reaction by lowering the activation energy?", a: "Inhibitor", b: "Catalyst", c: "Solvent", d: "Reactant", ans: "b" },
+
+    // 10. Chemical Equilibrium
+    { q: "Le Chatelier's principle states that if a system at equilibrium is disturbed, the system will:", a: "Stop reacting", b: "Shift to counteract the change", c: "Explode", d: "Change its state", ans: "b" },
+
+    // 11. Non-Metals & Compounds
+    { q: "The allotrope of Carbon used in making lead pencils is:", a: "Diamond", b: "Graphite", c: "Fullerene", d: "Amorphous carbon", ans: "b" },
+    { q: "Sulphur (IV) oxide acts as a bleaching agent in the presence of:", a: "Light", b: "Moisture", c: "Heat", d: "Oxygen", ans: "b" },
+
+    // 12. Metals & Compounds
+    { q: "The process of extracting iron from its ore in a blast furnace uses:", a: "Carbon dioxide", b: "Carbon (II) oxide", c: "Hydrogen", d: "Nitrogen", ans: "b" },
+    { q: "Which metal is used for galvanizing iron to prevent rusting?", a: "Copper", b: "Zinc", c: "Tin", d: "Lead", ans: "b" },
+
+    // 13. Organic Chemistry
+    { q: "The general formula for the Alkyne homologous series is:", a: "CnH2n+2", b: "CnH2n-2", c: "CnH2n", d: "CnH2n+1", ans: "b" },
+    { q: "The reaction between an organic acid and an alkanol to produce a sweet-smelling compound is:", a: "Saponification", b: "Esterification", c: "Neutralization", d: "Hydrolysis", ans: "b" },
+    { q: "Which of the following is a natural polymer?", a: "Nylon", b: "Starch", c: "Polythene", d: "PVC", ans: "b" },
+
+    // Additional coverage for remaining 15 questions across specific syllabus details:
+    { q: "The bond formed by the sharing of a pair of electrons between two atoms is:", a: "Ionic", b: "Covalent", c: "Metallic", d: "Hydrogen", ans: "b" },
+    { q: "Which gas is used in fire extinguishers because it does not support combustion?", a: "Oxygen", b: "Carbon (IV) oxide", c: "Hydrogen", d: "Methane", ans: "b" },
+    { q: "The principal ore of Aluminum is:", a: "Hematite", b: "Bauxite", c: "Galena", d: "Cassiterite", ans: "b" },
+    { q: "What is the common name for ethanoic acid?", a: "Formic acid", b: "Acetic acid", c: "Citric acid", d: "Lactic acid", ans: "b" },
+    { q: "Which indicator turns pink/red in an alkaline solution?", a: "Methyl orange", b: "Phenolphthalein", c: "Litmus", d: "Screened methyl orange", ans: "b" },
+    { q: "In the Periodic Table, elements in the same group have the same:", a: "Number of shells", b: "Number of valence electrons", c: "Atomic mass", d: "Atomic radius", ans: "b" },
+    { q: "The boiling point of water is higher than that of H2S because of:", a: "Covalent bonding", b: "Hydrogen bonding", c: "Ionic bonding", d: "Van der Waals forces", ans: "b" },
+    { q: "Radioactivity involves the spontaneous decay of the:", a: "Electrons", b: "Nucleus", c: "Protons", d: "Shells", ans: "b" },
+    { q: "The hydrocarbon used for ripening fruits is:", a: "Methane", b: "Ethene", c: "Ethyne", d: "Ethane", ans: "b" },
+    { q: "Which type of pollution causes 'Acid Rain'?", a: "Carbon monoxide", b: "Sulphur (IV) oxide", c: "CFCs", d: "Dust", ans: "b" },
+    { q: "A mixture of copper and zinc is an alloy called:", a: "Bronze", b: "Brass", c: "Solder", d: "Steel", ans: "b" },
+    { q: "The process of large organic molecules being broken down into smaller ones is:", a: "Polymerization", b: "Cracking", c: "Fermentation", d: "Hydrogenation", ans: "b" },
+    { q: "The most electronegative element in the Periodic Table is:", a: "Oxygen", b: "Fluorine", c: "Chlorine", d: "Nitrogen", ans: "b" },
+    { q: "Which of these is a greenhouse gas?", a: "Nitrogen", b: "Methane", c: "Oxygen", d: "Helium", ans: "b" },
+    { q: "The functional group -OH belongs to the:", a: "Alkanals", b: "Alkanols", c: "Alkanones", d: "Alkanoic acids", ans: "b" }
+        ]
+    },
+    "Biology": { 
+        marks: 2.5, 
+        questions: [
+            {q: "The powerhouse of the cell is?", a: "Nucleus", b: "Ribosome", c: "Mitochondria", d: "Vacuole", ans: "c"},
+{ q: "Which of the following cell organelles is responsible for cellular respiration?", a: "Ribosome", b: "Mitochondrion", c: "Golgi body", d: "Lysosome", ans: "b" },
+    { q: "The level of organization of Paramecium is the:", a: "Tissue level", b: "Cellular level", c: "Organ level", d: "System level", ans: "b" },
+    { q: "Which of the following is a characteristic of Euglena that makes it plant-like?", a: "Presence of flagellum", b: "Presence of chloroplast", c: "Presence of pellicle", d: "Presence of eye spot", ans: "b" },
+    { q: "In the level of organization, an onion bulb is classified as an:", a: "Organism", b: "Organ", c: "Tissue", d: "System", ans: "b" },
+    
+    // Kingdom Monera, Protista, Fungi, Plantae
+    { q: "Which of the following organisms belongs to the Kingdom Monera?", a: "Amoeba", b: "Bacteria", c: "Rhizopus", d: "Spirogyra", ans: "b" },
+    { q: "Bryophytes are different from Pteridophytes because they:", a: "Produce seeds", b: "Lack vascular tissues", c: "Have true roots", d: "Are flowering plants", ans: "b" },
+    { q: "An example of a gymnosperm is:", a: "Maize", b: "Cycas", c: "Water leaf", d: "Hibiscus", ans: "b" },
+    { q: "Monocotyledonous plants are characterized by:", a: "Tap roots", b: "Parallel venation", c: "Two cotyledons", d: "Floral parts in fours", ans: "b" },
+
+    // Animalia and Invertebrates
+    { q: "The phylum Platyhelminthes is represented by which of the following?", a: "Earthworm", b: "Tapeworm (Taenia)", c: "Roundworm", d: "Hookworm", ans: "b" },
+    { q: "Which of these is a characteristic of the phylum Arthropoda?", a: "Soft unsegmented bodies", b: "Jointed appendages", c: "Presence of stinging cells", d: "Radial symmetry", ans: "b" },
+    { q: "In which class of vertebrates do we find organisms with a three-chambered heart and moist skin?", a: "Pisces", b: "Amphibia", c: "Reptilia", d: "Aves", ans: "b" },
+
+    // Adaptations
+    { q: "The streamlined body of a fish is an adaptation for:", a: "Defense", b: "Easy movement in water", c: "Feeding", d: "Respiration", ans: "b" },
+    { q: "Adaptive coloration used by a chameleon to blend with its environment is called:", a: "Warning coloration", b: "Cryptic coloration", c: "Mimicry", d: "Countershading", ans: "b" },
+
+    // Internal Structure & Nutrition
+    { q: "The part of the mammalian tooth that contains blood vessels and nerves is the:", a: "Enamel", b: "Pulp cavity", c: "Dentine", d: "Cementum", ans: "b" },
+    { q: "Which enzyme is responsible for the digestion of proteins in the stomach?", a: "Ptyalin", b: "Pepsin", c: "Lipase", d: "Amylase", ans: "b" },
+    { q: "The mineral element required in small amounts (micro-nutrient) for plant growth is:", a: "Nitrogen", b: "Zinc", c: "Phosphorus", d: "Potassium", ans: "b" },
+    { q: "Testing for starch using Iodine solution gives a color change to:", a: "Brick red", b: "Blue-black", c: "Purple", d: "Milky white", ans: "b" },
+
+    // Transportation
+    { q: "The tissue responsible for the translocation of manufactured food in plants is:", a: "Xylem", b: "Phloem", c: "Cambium", d: "Pith", ans: "b" },
+    { q: "The heart chamber that pumps oxygenated blood to all parts of the body is the:", a: "Right Atrium", b: "Left Ventricle", c: "Left Atrium", d: "Right Ventricle", ans: "b" },
+
+    // Respiration
+    { q: "The respiratory organ of an adult toad when on land is the:", a: "Gills", b: "Lungs", c: "Skin", d: "Trachea", ans: "b" },
+    { q: "Anaerobic respiration in yeast produces carbon dioxide and:", a: "Water", b: "Ethanol", c: "Lactic acid", d: "Oxygen", ans: "b" },
+
+    // Excretion
+    { q: "The excretory structure in flatworms (Planaria) is the:", a: "Nephridium", b: "Flame cell", c: "Malpighian tubule", d: "Contractile vacuole", ans: "b" },
+    { q: "The functional unit of the mammalian kidney is the:", a: "Ureter", b: "Nephron", c: "Urethra", d: "Pelvis", ans: "b" },
+
+    // Support and Movement
+    { q: "Which of the following is an example of an exoskeleton?", a: "Femur", b: "Crab shell", c: "Skull", d: "Vertebral column", ans: "b" },
+    { q: "Movement of a plant part in response to a touch stimulus is called:", a: "Phototropism", b: "Thigmonasty", c: "Hydrotropism", d: "Geotropism", ans: "b" },
+
+    // Reproduction and Growth
+    { q: "The fusion of male and female gametes to form a zygote is:", a: "Pollination", b: "Fertilization", c: "Germination", d: "Ovulation", ans: "b" },
+    { q: "Which part of the flower develops into a seed after fertilization?", a: "Ovary", b: "Ovule", c: "Stigma", d: "Receptacle", ans: "b" },
+    { q: "Asexual reproduction in Paramecium is by:", a: "Budding", b: "Binary fission", c: "Fragmentation", d: "Spore formation", ans: "b" },
+    { q: "The type of germination where the cotyledons remain below the soil is:", a: "Epigeal", b: "Hypogeal", c: "Aerial", d: "Subterranean", ans: "b" },
+
+    // Nervous System and Hormones
+    { q: "The part of the brain responsible for balance and muscular coordination is the:", a: "Cerebrum", b: "Cerebellum", c: "Medulla oblongata", d: "Thalamus", ans: "b" },
+    { q: "The hormone that regulates the level of sugar in the blood is:", a: "Thyroxin", b: "Insulin", c: "Adrenaline", d: "Auxin", ans: "b" },
+    { q: "An example of a reflex action is:", a: "Writing", b: "Blinking of the eye", c: "Dancing", d: "Driving", ans: "b" },
+    { q: "The sense organ responsible for balance and hearing is the:", a: "Eye", b: "Ear", c: "Skin", d: "Tongue", ans: "b" },
+
+    // Ecology and Soil
+    { q: "The abiotic factor that determines the amount of water in the soil is:", a: "Predation", b: "Rainfall", c: "Competition", d: "Decomposition", ans: "b" },
+    { q: "A habitat described as being at the edge of the sea where fresh and salt water mix is a/an:", a: "Freshwater swamp", b: "Estuary", c: "Desert", d: "Savanna", ans: "b" },
+    { q: "Which soil type has the highest water-holding capacity?", a: "Sandy soil", b: "Clayey soil", c: "Loamy soil", d: "Silt", ans: "b" },
+    { q: "The process by which soil fertility is lost through the washing away of nutrients by rain is:", a: "Leaching", b: "Crop rotation", c: "Mulching", d: "Fallowing", ans: "a" },
+    { q: "A biotic component of the soil is:", a: "Air", b: "Earthworm", c: "Water", d: "Mineral salts", ans: "b" },
+    { q: "The regulation of the internal environment of an organism is called:", a: "Metabolism", b: "Homeostasis", c: "Irritability", d: "Osmosis", ans: "b" }
+        ]
+    },
+    "CRK": { 
+        marks: 2.5, 
+        questions: [
+            {q: "Who was the father of faith?", a: "Moses", b: "Abraham", c: "Isaac", d: "Jacob", ans: "b"},
+{ q: "The sign of God's covenant with Noah was the:", a: "Circumcision", b: "Rainbow", c: "Sabbath", d: "Ark", ans: "b" },
+    { q: "Joseph's leadership in Egypt was characterized by:", a: "Military conquest", b: "Divine wisdom and interpretation of dreams", c: "Building high walls", d: "Strict legalism", ans: "b" },
+    { q: "Which of the following judges was a woman?", a: "Gideon", b: "Deborah", c: "Samson", d: "Jephthah", ans: "b" },
+    { q: "The short-comings of Eli's children were primarily due to Eli's:", a: "Old age", b: "Lack of proper parental discipline", c: "Engagement in temple work", d: "Hatred for them", ans: "b" },
+    { q: "Abraham's obedience was tested when God asked him to sacrifice:", a: "A ram", b: "Isaac", c: "Ishmael", d: "His cattle", ans: "b" },
+    { q: "The primary consequence of Saul's disobedience was the:", a: "Death of his sons", b: "Rejection as king of Israel", c: "Loss of the Ark", d: "Defeat by the Midianites", ans: "b" },
+    { q: "David is described as a man after God's own heart because of his:", a: "Military skills", b: "Sincere repentance and submission to God's will", c: "Many wives", d: "Wealth and wisdom", ans: "b" },
+    { q: "Rehoboam's unwise decision led to the:", a: "Building of the temple", b: "Division of the kingdom", c: "Defeat of the Philistines", d: "Exile to Babylon", ans: "b" },
+
+    // Section B: Division of Kingdom to Return from Exile
+    { q: "The greed of Ahab led to the murder of:", a: "Gehazi", b: "Naboth", c: "Elijah", d: "Obadiah", ans: "b" },
+    { q: "The supremacy of God over Baal was demonstrated on Mount Carmel through:", a: "A great earthquake", b: "Fire from heaven", c: "A heavy rainstorm", d: "A miraculous healing", ans: "b" },
+    { q: "King Josiah is best known for his religious:", a: "Reforms and cleansing of the temple", b: "Wars against Assyria", c: "Idolatry", d: "Taxation policies", ans: "a" },
+    { q: "The faith and courage of Daniel's three friends were shown in the:", a: "Lions' den", b: "Fiery furnace", c: "Palace of the King", d: "Temple in Jerusalem", ans: "b" },
+    { q: "God's message to Nineveh through Jonah focused on:", a: "Blessing and wealth", b: "Repentance and escape from judgment", c: "Conquest of Israel", d: "Destruction of the temple", ans: "b" },
+    { q: "Amos' message to Israel emphasized:", a: "Ritual sacrifices", b: "Social justice and true religion", c: "Building more altars", d: "The greatness of the king", ans: "b" },
+    { q: "Hosea's marriage to Gomer was a symbol of:", a: "Human love", b: "God's love and Israel's unfaithfulness", c: "Prophetic celibacy", d: "Judicial authority", ans: "b" },
+
+    // Section C: The Gospels and Acts
+    { q: "John the Baptist served as the forerunner of Jesus by:", a: "Performing miracles", b: "Preparing the way through a call to repentance", c: "Becoming the High Priest", d: "Writing a book", ans: "b" },
+    { q: "The three temptations of Jesus were intended to test His:", a: "Physical strength", b: "Loyalty to God and His mission", c: "Knowledge of the Law", d: "Ability to escape death", ans: "b" },
+    { q: "Who was the tax collector called by Jesus to be a disciple?", a: "Peter", b: "Matthew (Levi)", c: "Andrew", d: "John", ans: "b" },
+    { q: "The miracle of raising Lazarus from the dead demonstrated Jesus' power over:", a: "Nature", b: "Death", c: "Demons", d: "Sickness", ans: "b" },
+    { q: "In the parable of the Sower, the seed that fell on rocky ground represents people who:", a: "Do not hear the word", b: "Have no root and fall away in times of trial", c: "Are choked by riches", d: "Bear much fruit", ans: "b" },
+    { q: "The Sermon on the Mount contains the:", a: "Ten Commandments", b: "Beatitudes", c: "Great Commission", d: "Parables of the Kingdom", ans: "b" },
+    { q: "The 'Great Confession' was made by Peter when he declared that Jesus is:", a: "A great prophet", b: "The Christ, the Son of the Living God", c: "The King of the Jews", d: "John the Baptist", ans: "b" },
+    { q: "The Holy Spirit descended on the disciples on the day of:", a: "Passover", b: "Pentecost", c: "Tabernacles", d: "Atonement", ans: "b" },
+    { q: "The first Christian martyr was:", a: "James", b: "Stephen", c: "Peter", d: "Paul", ans: "b" },
+    { q: "The conversion of Saul (Paul) occurred on the road to:", a: "Jericho", b: "Damascus", c: "Antioch", d: "Rome", ans: "b" },
+
+    // Section D: Epistles
+    { q: "According to Paul in Romans, justification is obtained through:", a: "Works of the Law", b: "Faith in Jesus Christ", c: "Giving to the poor", d: "Fasting", ans: "b" },
+    { q: "In his teaching on spiritual gifts, Paul emphasizes that the greatest of these is:", a: "Prophecy", b: "Love", c: "Tongues", d: "Knowledge", ans: "b" },
+    { q: "The 'fruit of the Spirit' as listed in Galatians includes:", a: "Wealth and health", b: "Love, joy, and peace", c: "Strength and power", d: "Judgment and wrath", ans: "b" },
+    { q: "James teaches that 'faith without ___ is dead'.", a: "Fasting", b: "Works", c: "Prayer", d: "Money", ans: "b" },
+    { q: "Civic responsibility as taught in Romans 13 involves:", a: "Rebelling against taxes", b: "Obedience to governing authorities", c: "Ignoring the law", d: "Overthrowing the king", ans: "b" },
+    { q: "The 'dignity of labour' implies that Christians should:", a: "Avoid work", b: "Work hard and avoid idleness", c: "Only work for the church", d: "Depend on others for food", ans: "b" },
+    { q: "What constitutes the 'Supreme Law' according to James?", a: "Love your neighbour as yourself", b: "An eye for an eye", c: "Pay your tithes", d: "Fast twice a week", ans: "a" },
+    { q: "According to Peter, Christians should face persecution with:", a: "Anger", b: "Patience and joy, following Christ's example", c: "Violence", d: "Fear", ans: "b" },
+    { q: "Sexual immorality should be avoided because the body is the:", a: "Source of sin", b: "Temple of the Holy Spirit", c: "Enemy of the soul", d: "Vessel of death", ans: "b" },
+    { q: "The second coming of Christ will be like a:", a: "Loud trumpet only", b: "Thief in the night", c: "Rising sun", d: "Burning bush", ans: "b" },
+    
+    // Mix for 40
+    { q: "Who was the High Priest that tried Jesus?", a: "Annas", b: "Caiaphas", c: "Gamaliel", d: "Nicodemus", ans: "b" },
+    { q: "In Acts, the first council to decide on the admission of Gentiles was held in:", a: "Antioch", b: "Jerusalem", c: "Ephesus", d: "Philippi", ans: "b" },
+    { q: "Which of these is a sign of the end times according to Paul?", a: "Universal peace", b: "The appearance of the man of lawlessness", c: "The end of poverty", d: "The building of a new ark", ans: "b" },
+    { q: "Paul's letter to Philemon was primarily about the forgiveness of:", a: "Barnabas", b: "Onesimus", c: "Timothy", d: "Silas", ans: "b" }
+        ]
+    },
+    "Government": { 
+        marks: 2.5, 
+        questions: [
+            {q: "The supreme power of a state is?", a: "Authority", b: "Sovereignty", c: "Influence", d: "Legitimacy", ans: "b"},
+{ q: "Which form of government is ruled by a few wealthy individuals?", a: "Monarchy", b: "Oligarchy", c: "Democracy", d: "Autocracy", ans: "b" },
+    { q: "The arm of government responsible for the interpretation of laws is the:", a: "Legislature", b: "Executive", c: "Judiciary", d: "Bureaucracy", ans: "c" },
+    { q: "A system of government where power is shared between the central authority and component units is:", a: "Unitary", b: "Federal", c: "Confederal", d: "Monarchical", ans: "b" },
+    { q: "The principle of 'Rule of Law' implies that:", a: "The military is above the law", b: "Everyone is equal before the law", c: "Judges can create laws", d: "The executive is supreme", ans: "b" },
+    { q: "In a Parliamentary system, the Head of Government is the:", a: "President", b: "Prime Minister", c: "Monarch", d: "Speaker", ans: "b" },
+    { q: "A written constitution that is difficult to amend is described as:", a: "Flexible", b: "Rigid", c: "Unwritten", d: "Unitary", ans: "b" },
+    { q: "The right to vote in an election is known as:", a: "Legitimacy", b: "Franchise", c: "Plebiscite", d: "Referendum", ans: "b" },
+    { q: "The primary function of a Political Party is to:", a: "Organize protests", b: "Contest elections and gain power", c: "Appoint judges", d: "Make laws", ans: "b" },
+    { q: "Pressure groups differ from political parties because they:", a: "Do not seek to control government power", b: "Have no members", c: "Are illegal", d: "Only exist during elections", ans: "a" },
+
+    // Political Development in Nigeria (Pre-Colonial & Colonial)
+    { q: "The 'Seriki' in the pre-colonial Hausa political system was the head of:", a: "The Judiciary", b: "The Administration", c: "The Military", d: "Trade", ans: "b" },
+    { q: "The pre-colonial Yoruba political system was an example of:", a: "A centralized monarchy with checks and balances", b: "An acephalous society", c: "A direct democracy", d: "A military dictatorship", ans: "a" },
+    { q: "The British policy of ruling through traditional rulers was known as:", a: "Assimilation", b: "Indirect Rule", c: "Association", d: "Direct Rule", ans: "b" },
+    { q: "The first Nigerian constitution to provide for the elective principle was the:", a: "Richards Constitution", b: "Clifford Constitution", c: "Macpherson Constitution", d: "Lyttleton Constitution", ans: "b" },
+    { q: "The 1954 Lyttleton Constitution is significant for establishing:", a: "Unitary government", b: "Federalism in Nigeria", c: "Independence", d: "The first republic", ans: "b" },
+    { q: "The nationalist leader known as the 'Father of Nigerian Nationalism' is:", a: "Nnamdi Azikiwe", b: "Herbert Macaulay", c: "Obafemi Awolowo", d: "Ahmadu Bello", ans: "b" },
+
+    // Post-Independence Nigeria
+    { q: "Nigeria became a Republic in what year?", a: "1960", b: "1963", c: "1966", d: "1970", ans: "b" },
+    { q: "The 1979 Constitution introduced which system of government to Nigeria?", a: "Parliamentary", b: "Presidential", c: "Monarchical", d: "Confederal", ans: "b" },
+    { q: "The Unification Decree No. 34 of 1966 was introduced by:", a: "Yakubu Gowon", b: "Aguiyi Ironsi", c: "Murtala Muhammed", d: "Sani Abacha", ans: "b" },
+    { q: "The primary reason for the creation of states in Nigeria is to:", a: "Promote ethnic dominance", b: "Bring government closer to the people", c: "Reduce the number of civil servants", d: "Abolish the federal system", ans: "b" },
+    { q: "The head of a Local Government Council is the:", a: "Governor", b: "Chairman", c: "Secretary", d: "Councilor", ans: "b" },
+    { q: "Which commission is responsible for conducting elections in Nigeria?", a: "EFCC", b: "INEC", c: "NPC", d: "ICPC", ans: "b" },
+    { q: "The highest court of appeal in Nigeria is the:", a: "High Court", b: "Supreme Court", c: "Court of Appeal", d: "Magistrate Court", ans: "b" },
+
+    // Foreign Policy & International Orgs
+    { q: "The 'centre-piece' of Nigeria's foreign policy is:", a: "Europe", b: "Africa", c: "The Americas", d: "Asia", ans: "b" },
+    { q: "The acronym 'ECOWAS' stands for:", a: "Economic Council of West African States", b: "Economic Community of West African States", c: "Educational Council of West African States", d: "Economic Committee of West African States", ans: "b" },
+    { q: "The Organization of Petroleum Exporting Countries (OPEC) was formed to:", a: "Promote oil wars", b: "Stabilize oil prices in the international market", c: "Abolish oil production", d: "Tax oil consumers", ans: "b" },
+    { q: "The UN organ responsible for maintaining world peace and security is the:", a: "General Assembly", b: "Security Council", c: "Secretariat", d: "Trusteeship Council", ans: "b" },
+    { q: "The administrative headquarters of the African Union (AU) is in:", a: "Lagos", b: "Addis Ababa", c: "Accra", d: "Nairobi", ans: "b" },
+    { q: "Nigeria's Non-Alignment policy during the Cold War meant:", a: "Joining the Soviet Union", b: "Not taking sides with any superpower bloc", c: "Joining the USA", d: "Abolishing foreign trade", ans: "b" },
+    { q: "The Commonwealth of Nations is an association of:", a: "African countries only", b: "Former British colonies and Britain", c: "European countries", d: "Oil producing countries", ans: "b" },
+
+    // Additional Syllabus Topics
+    { q: "Delegated legislation is law-making by:", a: "The Legislature", b: "The Executive and administrative agencies", c: "The Judiciary", d: "The Military only", ans: "b" },
+    { q: "A characteristic of the Civil Service is:", a: "Partisanship", b: "Anonymity", c: "Temporary tenure", d: "Religious bias", ans: "b" },
+    { q: "The process of transferring government-owned businesses to private individuals is:", a: "Commercialization", b: "Privatization", c: "Nationalization", d: "Indigenization", ans: "b" },
+    { q: "The first military coup in Nigeria occurred on:", a: "October 1, 1960", b: "January 15, 1966", c: "July 29, 1975", d: "December 31, 1983", ans: "b" },
+    { q: "An 'Acephalous' society is one that:", a: "Has a powerful king", b: "Lacks a centralized political authority", c: "Is ruled by the military", d: "Is a colony", ans: "b" },
+    { q: "The 1999 Constitution is essentially a:", a: "Unitary constitution", b: "Federal constitution", c: "Confederal constitution", d: "Monarchical constitution", ans: "b" },
+    { q: "The main source of revenue for the Nigerian government is:", a: "Agriculture", b: "Petroleum", c: "Tourism", d: "Manufacturing", ans: "b" },
+    { q: "A bill becomes law in a presidential system when it is signed by the:", a: "Chief Justice", b: "President", c: "Senate President", d: "Speaker", ans: "b" },
+    { q: "Bicameralism refers to a legislature with:", a: "One house", b: "Two houses", c: "Three houses", d: "No houses", ans: "b" },
+    { q: "Which of these is a function of the Public Complaints Commission?", a: "Conducting elections", b: "Investigating administrative injustice", c: "Printing money", d: "Defending the borders", ans: "b" }
+        ]
+    },
+    "Literature": { 
+        marks: 2.5, 
+        questions: [
+            {q: "Cleopatra was the Queen of?", a: "Rome", b: "Egypt", c: "Troy", d: "Greece", ans: "b"},
+{ q: "A speech made by a character alone on stage to reveal their inner thoughts is a:", a: "Dialogue", b: "Monologue", c: "Soliloquy", d: "Aside", ans: "c" },
+    { q: "The use of a part to represent a whole (e.g., 'all hands on deck') is:", a: "Metaphor", b: "Synecdoche", c: "Metonymy", d: "Personification", ans: "b" },
+    { q: "A poem of fourteen lines with a specific rhyme scheme is a:", a: "Ode", b: "Ballad", c: "Sonnet", d: "Elegy", ans: "c" },
+    { q: "When the audience knows something the characters do not, it is called:", a: "Verbal irony", b: "Situational irony", c: "Dramatic irony", d: "Sarcasm", ans: "c" },
+    { q: "A 'foil' in literature is a character who:", a: "Is the main villain", b: "Highlights the traits of another character through contrast", c: "Tells the story", d: "Never changes", ans: "b" },
+    { q: "The purging of emotions (pity and fear) through tragedy is:", a: "Hamartia", b: "Catharsis", c: "Hubris", d: "Peripeteia", ans: "b" },
+
+    // Shakespeare: Antony and Cleopatra
+    { q: "In Shakespeare's 'Antony and Cleopatra', Cleopatra is the Queen of:", a: "Rome", b: "Greece", c: "Egypt", d: "Syria", ans: "c" },
+    { q: "Who is the member of the Triumvirate that Antony eventually goes to war with?", a: "Lepidus", b: "Julius Caesar", c: "Octavius Caesar", d: "Pompey", ans: "c" },
+    { q: "How does Cleopatra commit suicide?", a: "Stabbing herself", b: "Drinking poison", c: "Bite of an asp (poisonous snake)", d: "Drowning", ans: "c" },
+
+    // African Drama
+    { q: "In Efua Sutherland's 'The Marriage of Anansewa', Ananse attempts to marry his daughter to:", a: "One wealthy chief", b: "Four different chiefs simultaneously", c: "A poor scholar", d: "A foreign prince", ans: "b" },
+    { q: "What is the name of Ananse's daughter in the play?", a: "Esi", b: "Anansewa", c: "Adwoa", d: "Ama", ans: "b" },
+    { q: "The dramatic technique where the 'Storyteller' interacts with the audience in 'The Marriage of Anansewa' is based on:", a: "Greek Tragedy", b: "Anansesem (Akan Folktale tradition)", c: "Shakespearean style", d: "Modernism", ans: "b" },
+
+    // Non-African Drama
+    { q: "In J.B. Priestley's 'An Inspector Calls', the Inspector's name is:", a: "Goole", b: "Smith", c: "Birling", d: "Croft", ans: "a" },
+    { q: "The central theme of 'An Inspector Calls' is:", a: "Romantic love", b: "Social responsibility and class", c: "War and peace", d: "Religious devotion", ans: "b" },
+    { q: "In Robert Bolt's 'A Man for All Seasons', Sir Thomas More refuses to take the oath because of his:", a: "Fear of death", b: "Conscience and religious conviction", c: "Hatred for the King", d: "Political ambition", ans: "b" },
+
+    // African Prose
+    { q: "In Pede Hollist's 'So the Path Does Not Die', the protagonist Finaba struggles with:", a: "Finding a job", b: "Traditional practices and cultural identity", c: "War in her country", d: "Learning a new language", ans: "b" },
+    { q: "In 'Redemption Road' by Elma Shaw, the story is set in the aftermath of the civil war in:", a: "Nigeria", b: "Sierra Leone", c: "Liberia", d: "Ghana", ans: "c" },
+
+    // Non-African Prose
+    { q: "In Harper Lee's 'To Kill a Mockingbird', who is the lawyer defending Tom Robinson?", a: "Jem Finch", b: "Atticus Finch", c: "Arthur Radley", d: "Bob Ewell", ans: "b" },
+    { q: "Who is the narrator of 'To Kill a Mockingbird'?", a: "Atticus", b: "Scout (Jean Louise Finch)", c: "Dill", d: "Calpurnia", ans: "b" },
+    { q: "The 'Mockingbird' in Harper Lee's novel symbolizes:", a: "Predators", b: "Innocence", c: "Fear", d: "Racism", ans: "b" },
+
+    // Poetry (African & Non-African)
+    { q: "In Gabriel Okara's poem 'Once Upon a Time', the persona laments the loss of:", a: "Money", b: "Sincerity and childhood innocence", c: "His parents", d: "His home", ans: "b" },
+    { q: "Maya Angelou's 'Still I Rise' is a poem about:", a: "Defeat", b: "Resilience and overcoming oppression", c: "The beauty of nature", d: "Ancient history", ans: "b" },
+    { q: "In Wole Soyinka's poem 'Night', the 'night' is portrayed as:", a: "A time for sleep", b: "An overwhelming, potent force", c: "A peaceful friend", d: "A sunny day", ans: "b" },
+    { q: "In Niyi Osundare's 'Not My Business', the persona's attitude at the beginning is one of:", a: "Active protest", b: "Indifference to the suffering of others", c: "Deep sorrow", d: "Fearless leadership", ans: "b" },
+    { q: "The poem 'She Walks in Beauty' by Lord Byron compares the woman to:", a: "The sun", b: "The night and starry skies", c: "A red rose", d: "A stormy sea", ans: "b" },
+
+    // Literary Appreciation (Unseen)
+    { q: "Identify the figure of speech: 'The wind whistled through the trees'.", a: "Metaphor", b: "Personification", c: "Oxymoron", d: "Hyperbole", ans: "b" },
+    { q: "A story within a story is known as a:", a: "Flashback", b: "Frame narrative", c: "Foreshadowing", d: "Foil", ans: "b" },
+    { q: "The 'setting' of a literary work refers to:", a: "The main character's goal", b: "The time and place of the action", c: "The ending of the story", d: "The conflict between characters", ans: "b" },
+    { q: "Identify the figure of speech: 'He is as brave as a lion'.", a: "Metaphor", b: "Simile", c: "Synecdoche", d: "Litotes", ans: "b" },
+    { q: "In poetry, the 'persona' is the:", a: "The poet himself", b: "The speaker or voice in the poem", c: "The person the poem is about", d: "The reader", ans: "b" },
+    { q: "A 'Malapropism' is the:", a: "Misuse of a word that sounds similar to the correct one", b: "Repetition of vowel sounds", c: "A long, formal poem", d: "The climax of a play", ans: "a" },
+
+    // More on Prescribed Texts
+    { q: "In 'Antony and Cleopatra', who describes Cleopatra's barge on the river Cydnus?", a: "Antony", b: "Enobarbus", c: "Octavia", d: "Charmian", ans: "b" },
+    { q: "Which character in 'To Kill a Mockingbird' is a recluse and saves the children?", a: "Tom Robinson", b: "Boo Radley", c: "Miss Maudie", d: "Aunt Alexandra", ans: "b" },
+    { q: "In 'The Marriage of Anansewa', Ananse uses 'Property Gold' as a way to:", a: "Pay his debts", b: "Trap the chiefs into commitment", c: "Buy a new house", d: "Help the poor", ans: "b" },
+    { q: "The tone of Wilfred Wilson Gibson's poem 'The Stone' is:", a: "Joyful", b: "Somber and tragic", c: "Humorous", d: "Optimistic", ans: "b" },
+    { q: "Seamus Heaney's 'Digging' compares the act of writing to:", a: "Farming/Digging", b: "Sailing", c: "Building a wall", d: "Flying", ans: "a" },
+    { q: "In 'Still I Rise', the persona says they have 'diamonds at the meeting of my ___'.", a: "Eyes", b: "Thighs", c: "Hands", d: "Feet", ans: "b" },
+    { q: "In 'An Inspector Calls', Eva Smith's death is caused by:", a: "A car accident", b: "Drinking disinfectant", c: "A terminal illness", d: "Old age", ans: "b" },
+    { q: "Which poem uses the 'Telephone Call' to satirize the concept of luck?", a: "Still I Rise", b: "The Telephone Call", c: "Once Upon a Time", d: "New Tongue", ans: "b" }
+        ]
+    }
+};
+
+let selectedSubjects = [];
+let currentSubjectIdx = 0;
+let currentQIdx = 0;
+let userAnswers = {}; // Format: { "Physics": { 0: "a", 1: "b" } }
+
+function initExam() {
+    const reg = document.getElementById('reg-no').value;
+    if(!reg) return alert("Please enter Registration Number");
+    
+    const checkboxes = document.querySelectorAll('#subject-selector input:checked');
+    if(checkboxes.length !== 4) return alert("You must select exactly 4 subjects!");
+
+    selectedSubjects = Array.from(checkboxes).map(cb => cb.value);
+    document.getElementById('disp-reg').innerText = reg;
+    document.getElementById('start-screen').classList.remove('active');
+    document.getElementById('exam-screen').classList.add('active');
+    
+    startSubject();
+}
+
+function startSubject() {
+    const subName = selectedSubjects[currentSubjectIdx];
+    document.getElementById('current-subject-name').innerText = subName.toUpperCase();
+    currentQIdx = 0;
+    loadQuestion();
+}
+
+function loadQuestion() {
+    const subName = selectedSubjects[currentSubjectIdx];
+    const qData = masterBank[subName].questions[currentQIdx];
+    
+    document.getElementById('q-progress').innerText = `Q ${currentQIdx + 1} / ${masterBank[subName].questions.length}`;
+    document.getElementById('q-body').innerText = qData.q;
+    
+    const optCont = document.getElementById('opt-container');
+    optCont.innerHTML = "";
+    
+    ['a','b','c','d'].forEach(letter => {
+        const div = document.createElement('div');
+        div.className = `opt ${userAnswers[subName]?.[currentQIdx] === letter ? 'picked' : ''}`;
+        div.innerText = `${letter.toUpperCase()}. ${qData[letter]}`;
+        div.onclick = () => {
+            if(!userAnswers[subName]) userAnswers[subName] = {};
+            userAnswers[subName][currentQIdx] = letter;
+            loadQuestion();
+        };
+        optCont.appendChild(div);
+    });
+
+    // Update Button Text
+    const nextBtn = document.getElementById('next-btn');
+    if (currentQIdx === masterBank[subName].questions.length - 1) {
+        nextBtn.innerText = currentSubjectIdx === 3 ? "FINISH ALL" : "NEXT SUBJECT";
+    } else {
+        nextBtn.innerText = "NEXT";
+    }
+}
+
+function nextQ() {
+    const subName = selectedSubjects[currentSubjectIdx];
+    if (currentQIdx < masterBank[subName].questions.length - 1) {
+        currentQIdx++;
+        loadQuestion();
+    } else {
+        // Move to next subject or finish
+        if (currentSubjectIdx < 3) {
+            currentSubjectIdx++;
+            startSubject();
+        } else {
+            showFinalResult();
+        }
+    }
+}
+
+function prevQ() {
+    if (currentQIdx > 0) {
+        currentQIdx--;
+        loadQuestion();
+    }
+}
+
+function showFinalResult() {
+    document.getElementById('exam-screen').classList.remove('active');
+    document.getElementById('result-screen').classList.add('active');
+    document.getElementById('res-reg').innerText = document.getElementById('reg-no').value;
+    
+    let totalScore = 0;
+    const scoreSummary = document.getElementById('individual-scores');
+    scoreSummary.innerHTML = "";
+
+    selectedSubjects.forEach(sub => {
+        let subScore = 0;
+        const bank = masterBank[sub];
+        bank.questions.forEach((q, i) => {
+            if(userAnswers[sub]?.[i] === q.ans) subScore += bank.marks;
+        });
+        totalScore += subScore;
+        scoreSummary.innerHTML += `<p><strong>${sub}:</strong> ${subScore.toFixed(1)}</p>`;
+    });
+
+    document.getElementById('total-agg').innerText = totalScore.toFixed(0);
+}
+</script>
+
+</body>
+</html>
