@@ -57,6 +57,9 @@
             <label class="subject-item"><input type="checkbox" value="CRK"> CRK</label>
             <label class="subject-item"><input type="checkbox" value="Government"> Government</label>
             <label class="subject-item"><input type="checkbox" value="Literature"> Literature in English</label>
+            <label class="subject-item"><input type="checkbox" value="Mathematics"> Mathematics</label>
+            <label class="subject-item"><input type="checkbox" value="IRK"> IRK</label>
+
         </div>
         <button class="btn btn-start" onclick="initExam()">START EXAMINATION</button>
     </div>
@@ -539,7 +542,124 @@ const masterBank = {
     { q: "In 'An Inspector Calls', Eva Smith's death is caused by:", a: "A car accident", b: "Drinking disinfectant", c: "A terminal illness", d: "Old age", ans: "b" },
     { q: "Which poem uses the 'Telephone Call' to satirize the concept of luck?", a: "Still I Rise", b: "The Telephone Call", c: "Once Upon a Time", d: "New Tongue", ans: "b" }
         ]
+    },
+    "Mathematics": { 
+        marks: 2.5, 
+        questions: [
+            { q: "Convert 27 (base 10) to a number in base 2.", a: "11011", b: "10111", c: "11101", d: "10011", ans: "a" },
+    { q: "Simplify 1/3 + 1/4 of 2/3.", a: "1/2", b: "5/12", c: "7/18", d: "1/6", ans: "a" },
+    { q: "Evaluate 0.000063 / 0.0009, leaving your answer in standard form.", a: "7.0 x 10^-1", b: "7.0 x 10^-2", c: "7.0 x 10^-3", d: "6.3 x 10^-2", ans: "b" },
+    { q: "Find the simple interest on N8000 for 3 years at 5% per annum.", a: "N1,200", b: "N1,500", c: "N800", d: "N2,400", ans: "a" },
+    
+    // Algebra
+    { q: "Solve for x: 2(x - 3) = 4.", a: "2", b: "5", c: "7", d: "1", ans: "b" },
+    { q: "If y varies directly as the square of x, and y=12 when x=2, find y when x=3.", a: "18", b: "27", c: "36", d: "24", ans: "b" },
+    { q: "Factorize completely: x^2 - 5x + 6.", a: "(x-1)(x-6)", b: "(x-2)(x-3)", c: "(x+2)(x+3)", d: "(x-5)(x+1)", ans: "b" },
+    { q: "Find the 10th term of the Arithmetic Progression (A.P): 2, 5, 8, ...", a: "27", b: "29", c: "31", d: "32", ans: "b" },
+    { q: "Solve the inequality: 3x - 5 < x + 7.", a: "x < 6", b: "x < 12", c: "x > 6", d: "x < 4", ans: "a" },
+    { q: "Find the value of x in log2(x) = 5.", a: "10", b: "25", c: "32", d: "16", ans: "c" },
+
+    // Sets & Logic
+    { q: "If Set A = {1, 2, 3} and Set B = {3, 4, 5}, find A ∩ B.", a: "{1, 2, 3, 4, 5}", b: "{3}", c: "{1, 2, 4, 5}", d: "{}", ans: "b" },
+    { q: "The number of subsets of a set containing 4 elements is:", a: "8", b: "12", c: "16", d: "4", ans: "c" },
+
+    // Geometry & Trigonometry
+    { q: "Find the sum of the interior angles of a pentagon.", a: "360°", b: "540°", c: "720°", d: "180°", ans: "b" },
+    { q: "The volume of a cylinder with radius 7cm and height 10cm is: (Take π = 22/7)", a: "1540 cm³", b: "770 cm³", c: "440 cm³", d: "154 cm³", ans: "a" },
+    { q: "If sin θ = 3/5, find cos θ (where θ is acute).", a: "4/5", b: "3/4", c: "1/2", d: "2/5", ans: "a" },
+    { q: "The angle of elevation of the top of a tree 10m high from a point 10m from the foot is:", a: "30°", b: "45°", c: "60°", d: "90°", ans: "b" },
+    { q: "Calculate the area of a circle whose diameter is 14cm.", a: "154 cm²", b: "44 cm²", c: "616 cm²", d: "308 cm²", ans: "a" },
+    { q: "The distance between points P(2, 3) and Q(5, 7) is:", a: "5 units", b: "7 units", c: "√13 units", d: "25 units", ans: "a" },
+
+    // Calculus
+    { q: "Differentiate y = x^3 + 2x with respect to x.", a: "3x^2 + 2", b: "x^2 + 2", c: "3x + 2", d: "3x^2", ans: "a" },
+    { q: "Find the integral of 2x dx.", a: "x^2 + C", b: "2x^2 + C", c: "x + C", d: "2 + C", ans: "a" },
+
+    // Statistics & Probability
+    { q: "Find the mean of the scores: 10, 12, 14, 16, 18.", a: "12", b: "14", c: "15", d: "16", ans: "b" },
+    { q: "The median of 5, 3, 8, 1, 9 is:", a: "8", b: "5", c: "1", d: "9", ans: "b" },
+    { q: "If a fair die is tossed once, what is the probability of getting an even number?", a: "1/6", b: "1/3", c: "1/2", d: "2/3", ans: "c" },
+    { q: "The mode of the data 2, 4, 4, 5, 6, 4, 7 is:", a: "4", b: "5", c: "6", d: "2", ans: "a" },
+
+    // Mixture of More Syllabus Topics
+    { q: "Rationalize the denominator: 2 / √2.", a: "√2", b: "2√2", c: "1", d: "4", ans: "a" },
+    { q: "Find the gradient of the line passing through (1, 2) and (3, 6).", a: "2", b: "4", c: "1", d: "3", ans: "a" },
+    { q: "A man bought a car for N500,000 and sold it for N400,000. Find the percentage loss.", a: "10%", b: "20%", c: "25%", d: "15%", ans: "b" },
+    { q: "Convert 135° to radians.", a: "π/4", b: "3π/4", c: "2π/3", d: "π/2", ans: "b" },
+    { q: "The binary equivalent of 10 in base 10 is:", a: "1010", b: "1100", c: "1001", d: "1111", ans: "a" },
+    { q: "Simplify: (x^5) / (x^2).", a: "x^7", b: "x^3", c: "x^10", d: "x^2.5", ans: "b" },
+    { q: "The third angle of a triangle with angles 45° and 75° is:", a: "60°", b: "45°", c: "80°", d: "90°", ans: "a" },
+    { q: "If 2^x = 16, find x.", a: "2", b: "3", c: "4", d: "5", ans: "c" },
+    { q: "What is the square root of 0.04?", a: "0.2", b: "0.02", c: "0.002", d: "2.0", ans: "a" },
+    { q: "The circumference of a circle is 44cm. Find the radius. (π=22/7)", a: "7cm", b: "14cm", c: "3.5cm", d: "21cm", ans: "a" },
+    { q: "Find the mid-point of the line joining (0,0) and (4,8).", a: "(2,4)", b: "(4,2)", c: "(0,4)", d: "(2,2)", ans: "a" },
+    { q: "How many sides has a regular polygon whose exterior angle is 36°?", a: "10", b: "12", c: "8", d: "6", ans: "a" },
+    { q: "The range of the set {1, 5, 9, 12, 15} is:", a: "14", b: "15", c: "1", d: "12", ans: "a" },
+    { q: "Find the value of (0.1)^2.", a: "0.1", b: "0.01", c: "0.001", d: "1.0", ans: "b" },
+    { q: "In a class of 40, 25 like Math and 20 like English. If 10 like both, how many like neither?", a: "5", b: "10", c: "15", d: "0", ans: "a" },
+    { q: "Calculate 5! (5 factorial).", a: "20", b: "60", c: "120", d: "100", ans: "c" }
+        ]
+    },
+    "IRK": { 
+        marks: 2.5, 
+        questions: [
+            { q: "The first Surah of the Holy Qur'an is Suratul:", a: "Baqarah", b: "Fatihah", c: "Ikhlas", d: "Nasr", ans: "b" },
+    { q: "The Qur'an was revealed to the Prophet (SAW) over a period of how many years?", a: "10 years", b: "23 years", c: "40 years", d: "13 years", ans: "b" },
+    { q: "Which Angel was responsible for delivering the revelation to the Prophet (SAW)?", a: "Mikail", b: "Israfil", c: "Jibril", d: "Izrail", ans: "c" },
+    { q: "The collection of the Qur'an into a single volume (Mushaf) was initiated during the caliphate of:", a: "Abu Bakr (RA)", b: "Umar (RA)", c: "Uthman (RA)", d: "Ali (RA)", ans: "a" },
+    { q: "Suratul 'Alaq (Chapter 96) is significant because it contains:", a: "The first revelation", b: "The laws of inheritance", c: "The description of Paradise", d: "The final revelation", ans: "a" },
+
+    // Hadith
+    { q: "The word 'Hadith' literally means:", a: "Law", b: "Talk or News", c: "History", d: "Worship", ans: "b" },
+    { q: "A Hadith that is attributed directly to Allah but phrased by the Prophet (SAW) is called:", a: "Hadith Sahih", b: "Hadith Qudsi", c: "Hadith Hasan", d: "Hadith Da'if", ans: "b" },
+    { q: "Who is the most famous collector of Hadith whose collection is considered the most authentic?", a: "Imam Muslim", b: "Imam Bukhari", c: "Imam Malik", d: "Imam Ahmad", ans: "b" },
+
+    // Tawhid and Faith
+    { q: "Shirk is defined in Islam as:", a: "Stealing", b: "Associating partners with Allah", c: "Lying", d: "Missing prayers", ans: "b" },
+    { q: "The belief in the Oneness of Allah is known as:", a: "Risalah", b: "Tawhid", c: "Akhirah", d: "Iman", ans: "b" },
+    { q: "The 'Mala'ikah' are created from:", a: "Fire", b: "Clay", c: "Light", d: "Water", ans: "c" },
+
+    // Fiqh (Worship and Law)
+    { q: "The second pillar of Islam is:", a: "Zakat", b: "Salat", c: "Sawm", d: "Hajj", ans: "b" },
+    { q: "Ablution performed with clean sand when water is unavailable is called:", a: "Wudu", b: "Ghusl", c: "Tayammum", d: "Istinja", ans: "c" },
+    { q: "The minimum amount of wealth on which Zakat becomes mandatory is called:", a: "Sadaqah", b: "Nisab", c: "Kharaj", d: "Jizyah", ans: "b" },
+    { q: "How many times a day is the obligatory Salat performed?", a: "3", b: "5", c: "7", d: "4", ans: "b" },
+    { q: "The month in which fasting (Sawm) is obligatory is:", a: "Muharram", b: "Ramadan", c: "Shawwal", d: "Dhul-Hijjah", ans: "b" },
+
+    // Sirah (Life of the Prophet)
+    { q: "The Prophet (SAW) was born in the year known as the Year of the:", a: "Camel", b: "Elephant", c: "Horse", d: "Lion", ans: "b" },
+    { q: "The migration of the Prophet (SAW) from Makkah to Madinah is called:", a: "Isra", b: "Hijrah", c: "Mi'raj", d: "Jihad", ans: "b" },
+    { q: "The first wife of the Prophet (SAW) was:", a: "Aishah (RA)", b: "Khadijah (RA)", c: "Hafsah (RA)", d: "Zaynab (RA)", ans: "b" },
+    { q: "The first battle fought between the Muslims and the Makkans was the Battle of:", a: "Uhud", b: "Badr", c: "Khandaq", d: "Khaibar", ans: "b" },
+    { q: "The Prophet (SAW) belonged to the tribe of:", a: "Umayyah", b: "Quraysh", c: "Khazraj", d: "Aws", ans: "b" },
+
+    // Islamic History & Culture
+    { q: "The first Mu'adhin (caller to prayer) in Islam was:", a: "Abu Bakr", b: "Bilal ibn Rabah", c: "Umar ibn Khattab", d: "Zaid ibn Harithah", ans: "b" },
+    { q: "The 'Khulafa'u-Rashidun' refers to the first ___ Caliphs.", a: "Two", b: "Four", c: "Six", d: "Ten", ans: "b" },
+    { q: "Who was the Caliph that expanded the Islamic empire to include Persia and Egypt?", a: "Abu Bakr", b: "Umar ibn Khattab", c: "Uthman ibn Affan", d: "Ali ibn Abi Talib", ans: "b" },
+
+    // Values and Ethics
+    { q: "The Islamic term for 'honesty' and 'trustworthiness' is:", a: "Sabr", b: "Amanah", c: "Ikhlas", d: "Adl", ans: "b" },
+    { q: "Which of the following is considered 'Haram' in Islamic dietary laws?", a: "Fish", b: "Pork", c: "Beef", d: "Chicken", ans: "b" },
+    { q: "The virtue of being patient during trials is called:", a: "Shukr", b: "Sabr", c: "Taqwa", d: "Zuhd", ans: "b" },
+
+    // More Syllabus Specifics
+    { q: "The Surah that is equivalent to one-third of the Qur'an in merit is:", a: "Suratul Fatihah", b: "Suratul Ikhlas", c: "Suratul Kafirun", d: "Suratul Baqarah", ans: "b" },
+    { q: "The night in Ramadan which is better than a thousand months is:", a: "Laylatul Mi'raj", b: "Laylatul Qadr", c: "Laylatul Barat", d: "Laylatul Jum'ah", ans: "b" },
+    { q: "The stand on the plain of ___ is a compulsory rite of Hajj.", a: "Mina", b: "Arafat", c: "Muzdalifah", d: "Safa", ans: "b" },
+    { q: "How many Sajdah (prostrations) are in two Rak'ahs of prayer?", a: "2", b: "4", c: "1", d: "3", ans: "b" },
+    { q: "The leader of the prayer is called the:", a: "Mu'adhin", b: "Imam", c: "Khalifah", d: "Ulama", ans: "b" },
+    { q: "The period of waiting for a divorced woman before she can remarry is called:", a: "Nikah", b: "Iddah", c: "Talaq", d: "Mahr", ans: "b" },
+    { q: "Which prophet is known as 'Khalilullah' (Friend of Allah)?", a: "Musa (AS)", b: "Ibrahim (AS)", c: "Isa (AS)", d: "Nuh (AS)", ans: "b" },
+    { q: "The Quranic term for 'the Day of Judgment' is:", a: "Yawm al-Ahzab", b: "Yawm al-Qiyamah", c: "Yawm al-Fath", d: "Yawm al-Arafat", ans: "b" },
+    { q: "The collection of sayings and actions of the Prophet is called:", a: "Ijma", b: "Sunnah", c: "Qiyas", d: "Tafsir", ans: "b" },
+    { q: "To perform Hajj, a Muslim must travel to which city?", a: "Madinah", b: "Makkah", c: "Jerusalem", d: "Cairo", ans: "b" },
+    { q: "Giving to the poor voluntarily is called:", a: "Zakat", b: "Sadaqah", c: "Jizyah", d: "Waqf", ans: "b" },
+    { q: "The title 'Al-Faruq' was given to:", a: "Abu Bakr", b: "Umar ibn Khattab", c: "Uthman ibn Affan", d: "Ali ibn Abi Talib", ans: "b" },
+    { q: "The cave where the first revelation occurred is called:", a: "Saur", b: "Hira", c: "Uhud", d: "Arafat", ans: "b" }
+        ]
     }
+
 };
 
 let selectedSubjects = [];
